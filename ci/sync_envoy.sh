@@ -18,7 +18,7 @@ fi
 
 
 build_protos () {
-    local go_protos go_proto
+    local go_protos go_proto go_file rule_dir proto input_dir output_dir
     echo "Building go protos ..."
     cd "${ENVOY_SRC_DIR}" || exit 1
 
@@ -27,7 +27,8 @@ build_protos () {
     # shellcheck disable=SC1091
     . ci/setup_cache.sh
 
-    go_protos=($(bazel query "kind('go_proto_library', ${GO_TARGETS[*]})" | xargs -0))
+    read -a go_protos <<< "$(bazel query "kind('go_proto_library', ${GO_TARGETS[*]})" | tr '\n' ' ')"
+
     bazel build \
           --experimental_proto_descriptor_sets_include_source_info \
           "${go_protos[@]}"
@@ -43,7 +44,7 @@ build_protos () {
         mkdir -p "$output_dir"
         while read -r go_file; do
             cp -a "$go_file" "$output_dir"
-        done <<< $(find "$input_dir" -name "*.go")
+        done <<< "$(find "$input_dir" -name "*.go")"
     done
     cd - || exit 1
 }
